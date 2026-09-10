@@ -12,6 +12,9 @@ npm run web        # browser
 npm run android    # Android device/emulator
 npm run ios        # iOS simulator (macOS only)
 npm start          # dev server, then scan the QR with Expo Go
+
+npm run build      # production web build into dist/ (installable PWA)
+npm run icons      # regenerate every app icon from the vector source
 ```
 
 ## Features
@@ -51,6 +54,23 @@ Every accent's `action` shade (used behind white button labels) is chosen to cle
 
 Note: the native splash screen and Android adaptive-icon background are baked in at build time (`app.json`), so they stay teal regardless of the in-app accent.
 
+## PWA (installable web app)
+
+`npm run build` produces an installable, offline-capable PWA in `dist/`. Expo SDK 57 does **not** generate a web manifest or service worker (that went away with `@expo/webpack-config`), so both are maintained here:
+
+| File | Purpose |
+| --- | --- |
+| `public/manifest.json` | Web app manifest — name, colors, `display: standalone`, icon set incl. a maskable variant |
+| `public/index.html` | Overrides Expo's HTML template to link the manifest and the iOS home-screen meta tags. Keeps the `react-native-web` reset and `#root` that Expo requires |
+| `public/sw.js` | Offline service worker — network-first for navigations, cache-first for hashed assets |
+| `scripts/build-web.mjs` | Runs the export, then stamps `sw.js` with the real asset list |
+
+That last step matters: Metro content-hashes the JS bundle, so its URL is only known after export. Precaching it at install time is what makes the app work offline **after a single visit** — without it the service worker isn't yet controlling the page when the bundle loads, so it takes a second visit before offline works. The cache name is derived from the bundle hash, so each deploy invalidates the previous cache instead of serving a mix of old and new chunks.
+
+Only the Ionicons font is precached; `@expo/vector-icons` ships ~18 other families the app never renders, which are left to cache on demand (2.5 MB precache instead of ~6 MB).
+
+iOS ignores the manifest, so `apple-touch-icon` plus `apple-mobile-web-app-*` tags handle Add to Home Screen there.
+
 ## Icons
 
 All six app icons are generated from a single vector source — no binary editing:
@@ -69,6 +89,10 @@ The mark is one receipt divided by a vertical cut into two unequal shares, with 
 | `android-icon-foreground.png` | 512² | Adaptive icon foreground |
 | `android-icon-background.png` | 512² | Adaptive icon background layer |
 | `android-icon-monochrome.png` | 432² | Android 13+ themed icons |
+| `public/pwa-192.png` | 192² | PWA install icon |
+| `public/pwa-512.png` | 512² | PWA install icon / splash |
+| `public/pwa-maskable-512.png` | 512² | PWA maskable — art bleeds to the edge for circular crops |
+| `public/apple-touch-icon.png` | 180² | iOS Add to Home Screen (opaque) |
 
 The script's `span` parameter means "fraction of the canvas the mark occupies", so the platform sizing rules are expressed directly. The Android foreground sits at ~58×62% — filling the launcher mask while staying inside the 66% safe zone, which `scripts/make-icons.mjs` output and the checks in this repo's history verified against circular and squircle masks.
 

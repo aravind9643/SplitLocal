@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <!-- viewport-fit=cover so the app can use the safe-area insets on notched phones -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover"
+    />
+    <title>SplitLocal</title>
+
+    <!-- PWA: Expo no longer generates a manifest, so it is linked by hand. -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#1CC29F" />
+    <meta
+      name="description"
+      content="Split shared expenses with friends. No account, no server — everything stays on your device."
+    />
+
+    <link rel="icon" href="/favicon.ico" />
+    <!-- iOS ignores the manifest; it needs these to install to the home screen. -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="SplitLocal" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!--
+      The `react-native-web` recommended style reset:
+      https://necolas.github.io/react-native-web/docs/setup/#root-element
+    -->
+    <style id="expo-reset">
+      /* These styles make the body full-height */
+      html,
+      body {
+        height: 100%;
+      }
+      /* These styles disable body scrolling if you are using <ScrollView> */
+      body {
+        overflow: hidden;
+      }
+      /* These styles make the root element full-height */
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+      /* Paint the brand colour behind the app so the launch flash matches the
+         splash screen instead of flashing white. */
+      body {
+        margin: 0;
+        background-color: #f5f7fa;
+      }
+    </style>
+  </head>
+
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <script>
+      // Register the offline service worker (generated at build time).
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/sw.js').catch(function () {
+            /* offline support is a bonus; ignore failures */
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

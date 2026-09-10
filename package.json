@@ -26,7 +26,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "build": "expo export -p web",
+    "build": "node scripts/build-web.mjs",
     "icons": "node scripts/make-icons.mjs"
   },
   "private": true,

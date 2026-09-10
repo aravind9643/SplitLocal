@@ -9,10 +9,11 @@
  * iOS tinted mode).
  */
 import sharp from 'sharp';
-import { writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const OUT = 'assets';
+const WEB = 'public'; // copied verbatim into dist/ on web export
 const BRAND = { light: '#1CC29F', mid: '#12A5B0' };
 
 const GRAD = `<linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
@@ -88,11 +89,13 @@ const render = (markup, size, opts = {}) => {
   return p.png().toBuffer();
 };
 
-const write = async (name, buf) => {
-  await writeFile(join(OUT, name), buf);
+/** Writes to `assets/` by default; pass dir 'public' for web-served files. */
+const write = async (name, buf, dir = OUT) => {
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, name), buf);
   const m = await sharp(buf).metadata();
   console.log(
-    `  ${name.padEnd(30)} ${`${m.width}x${m.height}`.padEnd(11)} ` +
+    `  ${join(dir, name).padEnd(34)} ${`${m.width}x${m.height}`.padEnd(11)} ` +
       `alpha=${m.hasAlpha ? 'yes' : 'no '}  ${(buf.length / 1024).toFixed(1)} KB`
   );
 };
@@ -106,9 +109,25 @@ await write(
 );
 // Favicon — 96px so browsers downscale cleanly to 16/32/48; the mark spans a
 // touch more of the tile because a tab icon has no room for wide margins.
-// SDK 57's `web` config takes a single favicon (no multi-size manifest icon
-// property), so this one file serves every web surface.
 await write('favicon.png', await render(svg({ bg: 'gradient', rounded: 96, span: 0.66 }), 96));
+
+// PWA install icons. Expo no longer generates a web manifest, so these are
+// referenced by hand from public/manifest.json and land in dist/ via public/.
+await write('pwa-192.png', await render(svg({ bg: 'gradient', rounded: 42, span: 0.62 }), 192), WEB);
+await write('pwa-512.png', await render(svg({ bg: 'gradient', rounded: 112, span: 0.62 }), 512), WEB);
+// Maskable: Android crops install icons to a circle/squircle, so the artwork
+// must bleed to the edges and the mark shrink into the ~80% safe area.
+await write(
+  'pwa-maskable-512.png',
+  await render(svg({ bg: 'gradient', rounded: 0, span: 0.46 }), 512),
+  WEB
+);
+// Apple touch icon — iOS ignores the manifest and needs its own opaque PNG.
+await write(
+  'apple-touch-icon.png',
+  await render(svg({ bg: 'gradient', rounded: 0, span: 0.6 }), 180, { flatten: BRAND.light }),
+  WEB
+);
 // Splash — mark alone on the brand background.
 await write('splash-icon.png', await render(svg({ bg: null, span: 0.5 }), 1024));
 // Android adaptive foreground — 62% fills the launcher mask without clipping

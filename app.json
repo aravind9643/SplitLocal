@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "com.splitlocal.app",
-      "edgeToEdgeEnabled": true,
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#1CC29F",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -36,6 +36,7 @@
       "backgroundColor": "#F5F7FA"
     },
     "plugins": [
+      "./plugins/withReleaseSigning.js",
       [
         "expo-splash-screen",
         {

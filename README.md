@@ -54,6 +54,28 @@ Every accent's `action` shade (used behind white button labels) is chosen to cle
 
 Note: the native splash screen and Android adaptive-icon background are baked in at build time (`app.json`), so they stay teal regardless of the in-app accent.
 
+## Android build
+
+```bash
+npm run android:apk     # signed release APK  → android/app/build/outputs/apk/release/
+npm run android:aab     # Play Store bundle   → android/app/build/outputs/bundle/release/
+npm run android:debug   # debug APK, no signing needed
+```
+
+Builds run **locally** — no EAS account or cloud queue. `scripts/build-android.mjs` runs `expo prebuild` if needed, then Gradle, and handles two things that otherwise break a local build:
+
+**JDK version.** React Native's CMake/NDK tasks fail on JDK 22+ with *"a restricted method in java.lang.System has been called"* (JEP 472). Expo requires JDK 17. Android Studio ships a JDK 25 as its `jbr`, so the script searches for a 17–21 install (including JDKs Gradle has auto-provisioned under `~/.gradle/jdks`) rather than trusting `JAVA_HOME`. If none is found it says so instead of failing deep inside Gradle:
+
+```
+winget install EclipseAdoptium.Temurin.17.JDK
+```
+
+**Signing.** Release builds are signed with `credentials/release.keystore`. Passwords are passed as `ORG_GRADLE_PROJECT_*` environment variables, so nothing secret is written to a tracked file, and the config is applied by a config plugin (`plugins/withReleaseSigning.js`) so it survives `expo prebuild --clean` — editing `android/app/build.gradle` by hand would be silently lost, since `android/` is generated and gitignored.
+
+Override the defaults with `SPLITLOCAL_STORE_PASSWORD` / `SPLITLOCAL_KEY_PASSWORD` / `SPLITLOCAL_KEY_ALIAS`. **Back up the keystore** — see `credentials/README.md`; losing it means you can never update the app under the same identity.
+
+Requires Android SDK Platform 36 (Android 16), which React Native 0.86 compiles against. Install it via Android Studio → SDK Manager if the build reports it missing.
+
 ## PWA (installable web app)
 
 `npm run build` produces an installable, offline-capable PWA in `dist/`. Expo SDK 57 does **not** generate a web manifest or service worker (that went away with `@expo/webpack-config`), so both are maintained here:

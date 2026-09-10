@@ -18,7 +18,7 @@ import {
   notify,
   useTheme,
 } from '../ui';
-import { font, radius } from '../theme';
+import { accentGlow, font, radius } from '../theme';
 import { MY_ID, fmt, uid, useSelectors, useStore } from '../store';
 
 
@@ -140,11 +140,7 @@ export function Fab({ onPress, icon = 'add', label }) {
           justifyContent: 'center',
           flexDirection: 'row',
           gap: 8,
-          shadowColor: t.action,
-          shadowOpacity: 0.45,
-          shadowRadius: 16,
-          shadowOffset: { width: 0, height: 6 },
-          elevation: 8,
+          ...accentGlow(t.action, 12),
         }}
       >
         <Ionicons name={icon} size={28} color={t.onAction} />

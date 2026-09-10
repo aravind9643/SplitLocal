@@ -54,6 +54,7 @@ const ME = 'me';
 const initialState = {
   ready: false,
   themeMode: 'light',
+  accent: 'teal',
   currency: 'INR',
   people: [{ id: ME, name: 'You' }],
   groups: [],
@@ -122,7 +123,13 @@ function reducer(state, action) {
       return { ...state, settlements: state.settlements.filter((s) => s.id !== action.id) };
 
     case 'RESET':
-      return { ...initialState, ready: true, themeMode: state.themeMode };
+      return {
+        ...initialState,
+        ready: true,
+        themeMode: state.themeMode,
+        accent: state.accent,
+        currency: state.currency,
+      };
     default:
       return state;
   }

@@ -19,7 +19,8 @@ import {
   notify,
   useTheme,
 } from '../ui';
-import { font, radius } from '../theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { accentList, accents, font, radius } from '../theme';
 import { CURRENCIES, MY_ID, fmt, plural, useSelectors, useStore } from '../store';
 
 const MODES = [
@@ -102,6 +103,66 @@ export default function SettingsScreen() {
                   onPress={() => dispatch({ type: 'SET', payload: { themeMode: m.id } })}
                 />
               ))}
+            </Row>
+
+            <Text style={[font.h3, { color: t.text, marginTop: 22, marginBottom: 4 }]}>
+              Color theme
+            </Text>
+            <Text style={[font.small, { color: t.textMuted, marginBottom: 14 }]}>
+              {accents[state.accent]?.label || 'Teal'}
+            </Text>
+            <Row style={{ gap: 12, flexWrap: 'wrap' }}>
+              {accentList.map((a) => {
+                const on = state.accent === a.id;
+                return (
+                  <Squish
+                    key={a.id}
+                    onPress={() => dispatch({ type: 'SET', payload: { accent: a.id } })}
+                    style={{ alignItems: 'center', gap: 6, width: 60 }}
+                  >
+                    <View
+                      style={{
+                        width: 46,
+                        height: 46,
+                        borderRadius: 23,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderWidth: 2.5,
+                        borderColor: on ? a.primary : 'transparent',
+                        backgroundColor: on ? a.primary + '1F' : 'transparent',
+                      }}
+                    >
+                      <LinearGradient
+                        colors={a.gradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 16,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {on ? <Ionicons name="checkmark" size={19} color="#fff" /> : null}
+                      </LinearGradient>
+                    </View>
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        font.small,
+                        {
+                          color: on ? t.text : t.textMuted,
+                          fontWeight: on ? '700' : '500',
+                          fontSize: 12,
+                        },
+                      ]}
+                    >
+                      {a.label}
+                    </Text>
+                  </Squish>
+                );
+              })}
             </Row>
           </Card>
         </FadeIn>

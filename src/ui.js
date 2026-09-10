@@ -17,7 +17,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { themes, radius, font, shadow } from './theme';
+import {
+  themes,
+  buildTheme,
+  DEFAULT_ACCENT,
+  accentGlow,
+  radius,
+  font,
+  shadow,
+} from './theme';
 import { colorFor, initials } from './store';
 
 /* ---------------- theme context ---------------- */
@@ -25,10 +33,13 @@ import { colorFor, initials } from './store';
 const ThemeCtx = createContext(themes.light);
 export const useTheme = () => useContext(ThemeCtx);
 
-export function ThemeProvider({ mode, children }) {
+export function ThemeProvider({ mode, accent = DEFAULT_ACCENT, children }) {
   const system = useColorScheme();
   const resolved = mode === 'system' ? (system === 'dark' ? 'dark' : 'light') : mode;
-  const t = themes[resolved] || themes.light;
+  const t = React.useMemo(
+    () => buildTheme(resolved === 'dark' ? 'dark' : 'light', accent),
+    [resolved, accent]
+  );
   return <ThemeCtx.Provider value={t}>{children}</ThemeCtx.Provider>;
 }
 
@@ -90,6 +101,7 @@ export function Squish({
   style,
   wrapperStyle,
   disabled,
+  label,
   scaleTo = 0.965,
   haptic = 'light',
 }) {
@@ -100,6 +112,9 @@ export function Squish({
     <Pressable
       style={wrapperStyle}
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      testID={label}
       onPressIn={() => spring(scaleTo)}
       onPressOut={() => spring(1)}
       onPress={
@@ -286,7 +301,7 @@ export function Button({
           opacity: disabled ? 0.45 : 1,
           alignSelf: full ? 'stretch' : 'flex-start',
         },
-        variant === 'primary' && shadow(8),
+        variant === 'primary' && accentGlow(v.bg, 10),
         style,
       ]}
     >
@@ -309,6 +324,7 @@ export function Chip({ label, active, onPress, icon, color }) {
   return (
     <Squish
       onPress={onPress}
+      label={label}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -317,6 +333,9 @@ export function Chip({ label, active, onPress, icon, color }) {
         paddingHorizontal: 14,
         borderRadius: radius.pill,
         backgroundColor: bg,
+        // same accent glow the FAB/primary button carries, so filled
+        // surfaces of the same colour don't read as two different shades
+        ...(active ? accentGlow(bg, 8) : null),
       }}
     >
       {icon ? <Ionicons name={icon} size={15} color={fg} /> : null}

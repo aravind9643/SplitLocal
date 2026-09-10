@@ -36,7 +36,20 @@ Any member can be the payer, and participants are individually selectable per ex
 
 **Activity** — unified reverse-chronological feed of every expense and payment.
 
-**Settings** — light/dark/system theme, 7 currencies, JSON export, full reset.
+**Settings** — light/dark/system mode, **6 color themes** (Teal, Indigo, Ocean, Sunset, Rose, Forest), 7 currencies, JSON export, full reset.
+
+## Theming
+
+Two independent axes, both persisted locally:
+
+- **Mode** — light / dark / follow-system
+- **Accent** — 6 color themes, each defined once in [src/theme.js](src/theme.js)
+
+`buildTheme(mode, accentId)` composes shared neutrals with the accent's four slots (`primary`, `deep`, `action`, `gradient`), so the accent flows to headers, buttons, the FAB, active chips, tab icons, and progress bars. Adding a seventh theme means adding one entry to `accents` — nothing else.
+
+Every accent's `action` shade (used behind white button labels) is chosen to clear the WCAG AA 4.5:1 contrast threshold; the measured range is 4.82:1–7.28:1. Filled accent surfaces share one `accentGlow()` helper so a flat fill never sits next to a glowing one of the same color and reads as a different shade.
+
+Note: the native splash screen and Android adaptive-icon background are baked in at build time (`app.json`), so they stay teal regardless of the in-app accent.
 
 ## Design
 

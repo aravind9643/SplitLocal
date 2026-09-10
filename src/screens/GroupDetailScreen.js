@@ -81,14 +81,14 @@ export default function GroupDetailScreen({ groupId, onBack }) {
     <View style={{ flex: 1, backgroundColor: t.bg }}>
       <Hero style={{ paddingBottom: 18 }}>
         <Row style={{ paddingTop: 6, justifyContent: 'space-between' }}>
-          <Squish onPress={onBack} style={{ padding: 6, marginLeft: -6 }}>
+          <Squish onPress={onBack} label="Back to groups" style={{ padding: 6, marginLeft: -6 }}>
             <Ionicons name="arrow-back" size={26} color="#fff" />
           </Squish>
           <Row style={{ gap: 4 }}>
-            <Squish onPress={() => setEditingGroup(true)} style={{ padding: 8 }}>
+            <Squish onPress={() => setEditingGroup(true)} label="Edit group" style={{ padding: 8 }}>
               <Ionicons name="create-outline" size={22} color="#fff" />
             </Squish>
-            <Squish onPress={() => setConfirmDelete(true)} style={{ padding: 8 }}>
+            <Squish onPress={() => setConfirmDelete(true)} label="Delete group" style={{ padding: 8 }}>
               <Ionicons name="trash-outline" size={22} color="#fff" />
             </Squish>
           </Row>

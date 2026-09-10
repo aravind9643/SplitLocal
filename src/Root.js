@@ -209,7 +209,7 @@ function Shell() {
 function Themed() {
   const { state } = useStore();
   return (
-    <ThemeProvider mode={state.themeMode}>
+    <ThemeProvider mode={state.themeMode} accent={state.accent}>
       <Shell />
     </ThemeProvider>
   );

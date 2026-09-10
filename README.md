@@ -51,6 +51,27 @@ Every accent's `action` shade (used behind white button labels) is chosen to cle
 
 Note: the native splash screen and Android adaptive-icon background are baked in at build time (`app.json`), so they stay teal regardless of the in-app accent.
 
+## Icons
+
+All six app icons are generated from a single vector source — no binary editing:
+
+```bash
+npm run icons     # node scripts/make-icons.mjs
+```
+
+The mark is one receipt divided by a vertical cut into two unequal shares, with the line items continuing across the split. It's built as even-odd paths (the cut and line items are real holes, not shapes painted in the background color), so the same geometry works full-bleed, on transparency, and as a flat silhouette.
+
+| Asset | Size | Purpose |
+| --- | --- | --- |
+| `icon.png` | 1024² | iOS / store icon — alpha flattened, since Apple rejects transparency |
+| `favicon.png` | 96² | Web; Expo compiles it into a multi-size `favicon.ico` |
+| `splash-icon.png` | 1024² | Splash mark, transparent — sized via the `expo-splash-screen` plugin |
+| `android-icon-foreground.png` | 512² | Adaptive icon foreground |
+| `android-icon-background.png` | 512² | Adaptive icon background layer |
+| `android-icon-monochrome.png` | 432² | Android 13+ themed icons |
+
+The script's `span` parameter means "fraction of the canvas the mark occupies", so the platform sizing rules are expressed directly. The Android foreground sits at ~58×62% — filling the launcher mask while staying inside the 66% safe zone, which `scripts/make-icons.mjs` output and the checks in this repo's history verified against circular and squircle masks.
+
 ## Design
 
 Custom UI layer in [src/ui.js](src/ui.js) — gradient headers, spring-press feedback on every tappable, staggered list fade-ins, animated count-up totals, animated progress bars, and slide-up bottom sheets. Haptics on native. Dark mode throughout. On wide browser windows the app centers itself in a phone-width column.

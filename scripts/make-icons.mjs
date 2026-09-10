@@ -104,19 +104,11 @@ await write(
   'icon.png',
   await render(svg({ bg: 'gradient', rounded: 0, span: 0.58 }), 1024, { flatten: BRAND.light })
 );
-// Favicon — 96px so browsers downscale cleanly to 16/32; the mark spans a
+// Favicon — 96px so browsers downscale cleanly to 16/32/48; the mark spans a
 // touch more of the tile because a tab icon has no room for wide margins.
+// SDK 57's `web` config takes a single favicon (no multi-size manifest icon
+// property), so this one file serves every web surface.
 await write('favicon.png', await render(svg({ bg: 'gradient', rounded: 96, span: 0.66 }), 96));
-
-// PWA install icons (referenced from app.json web.manifest).
-await write('web-icon-192.png', await render(svg({ bg: 'gradient', rounded: 42, span: 0.62 }), 192));
-await write('web-icon-512.png', await render(svg({ bg: 'gradient', rounded: 112, span: 0.62 }), 512));
-// Maskable variant: Android PWA masks crop to a circle, so keep the mark small
-// enough to survive the crop and let the background bleed to the edges.
-await write(
-  'web-icon-maskable-512.png',
-  await render(svg({ bg: 'gradient', rounded: 0, span: 0.46 }), 512)
-);
 // Splash — mark alone on the brand background.
 await write('splash-icon.png', await render(svg({ bg: null, span: 0.5 }), 1024));
 // Android adaptive foreground — 62% fills the launcher mask without clipping

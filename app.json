@@ -8,12 +8,6 @@
     "scheme": "splitlocal",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "splash": {
-      "backgroundColor": "#1CC29F",
-      "resizeMode": "contain",
-      "image": "./assets/splash-icon.png",
-      "imageWidth": 220
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.splitlocal.app"
@@ -31,7 +25,26 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
-      "output": "single"
-    }
+      "output": "single",
+      "name": "SplitLocal",
+      "shortName": "SplitLocal",
+      "description": "Split shared expenses with friends — no account, stored on your device.",
+      "lang": "en",
+      "display": "standalone",
+      "startUrl": "/",
+      "themeColor": "#1CC29F",
+      "backgroundColor": "#F5F7FA"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#1CC29F",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain"
+        }
+      ]
+    ]
   }
 }

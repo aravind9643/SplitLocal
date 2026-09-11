@@ -1,20 +1,16 @@
 # SplitLocal
 
-A shared-expense splitter for groups built with Expo + React Native. **No accounts, no server, no sync** — every byte lives in local device storage (`AsyncStorage`, which is `localStorage` on web).
+A shared-expense splitter for groups, built with React Native for Web (via Expo). **No accounts, no server, no sync** — every byte lives in the browser's `localStorage`.
 
-Runs on **web, Android and iOS** from one codebase.
+Ships as an **installable, offline-capable PWA**.
 
 ## Run it
 
 ```bash
 npm install
-npm run web        # browser
-npm run android    # Android device/emulator
-npm run ios        # iOS simulator (macOS only)
-npm start          # dev server, then scan the QR with Expo Go
-
-npm run build      # production web build into dist/ (installable PWA)
-npm run icons      # regenerate every app icon from the vector source
+npm run web        # dev server in the browser
+npm run build      # production build into dist/ (installable PWA)
+npm run icons      # regenerate every icon from the vector source
 ```
 
 ## Features
@@ -52,54 +48,7 @@ Two independent axes, both persisted locally:
 
 Every accent's `action` shade (used behind white button labels) is chosen to clear the WCAG AA 4.5:1 contrast threshold; the measured range is 4.82:1–7.28:1. Filled accent surfaces share one `accentGlow()` helper so a flat fill never sits next to a glowing one of the same color and reads as a different shade.
 
-Note: the native splash screen and Android adaptive-icon background are baked in at build time (`app.json`), so they stay teal regardless of the in-app accent.
-
-## Android build
-
-```bash
-npm run android:fast    # arm64 only — ~2 min, for testing on a real phone
-npm run android:apk     # all 4 ABIs, signed  → android/app/build/outputs/apk/release/
-npm run android:aab     # Play Store bundle   → android/app/build/outputs/bundle/release/
-npm run android:debug   # debug APK, no signing needed
-```
-
-Extra flags for `scripts/build-android.mjs`: `--fast` (arm64), `--fast-emu` (x86_64 emulator), `--clean` (force re-packaging and re-signing), `--check` (verify JDK/SDK/keystore without building).
-
-Builds run **locally** — no EAS account or cloud queue. `scripts/build-android.mjs` runs `expo prebuild` if needed, then Gradle, and handles two things that otherwise break a local build:
-
-**JDK version.** React Native's CMake/NDK tasks fail on JDK 22+ with *"a restricted method in java.lang.System has been called"* (JEP 472). Expo requires JDK 17. Android Studio ships a JDK 25 as its `jbr`, so the script searches for a 17–21 install (including JDKs Gradle has auto-provisioned under `~/.gradle/jdks`) rather than trusting `JAVA_HOME`. If none is found it says so instead of failing deep inside Gradle:
-
-```
-winget install EclipseAdoptium.Temurin.17.JDK
-```
-
-**Signing.** Release builds are signed with `credentials/release.keystore`. Passwords are passed as `ORG_GRADLE_PROJECT_*` environment variables, so nothing secret is written to a tracked file, and the config is applied by a config plugin (`plugins/withReleaseSigning.js`) so it survives `expo prebuild --clean` — editing `android/app/build.gradle` by hand would be silently lost, since `android/` is generated and gitignored.
-
-Override the defaults with `SPLITLOCAL_STORE_PASSWORD` / `SPLITLOCAL_KEY_PASSWORD` / `SPLITLOCAL_KEY_ALIAS`. **Back up the keystore** — see `credentials/README.md`; losing it means you can never update the app under the same identity.
-
-After building, the script verifies the APK's certificate with `apksigner` and **fails** if it carries `CN=Android Debug`. Gradle can report `assembleRelease` as `UP-TO-DATE` and hand back an artifact signed under an earlier config, so the check trusts the file rather than the build log. If it trips, rebuild with `--clean`.
-
-### Build time and APK size
-
-Measured on this project (8-core machine, cold native cache):
-
-| Build | Time | APK |
-| --- | --- | --- |
-| All 4 ABIs, no shrinking | 19m 06s | 92.7 MB |
-| `--fast` (arm64 only) | 2m 13s | 34.8 MB |
-| `--fast` + R8 + unused deps removed | 4m 22s | **26.3 MB** |
-
-Two separate problems, two separate fixes.
-
-**Time** is dominated by compiling C++ (Hermes, Reanimated, gesture-handler, expo-modules-core, the app's JNI) *once per ABI* — 44 CMake tasks across four architectures. `--fast` builds only `arm64-v8a`, removing ~75% of that work. `arm64-v8a` covers essentially every modern physical device; use `--fast-emu` for an x86_64 emulator. Neither is for distribution.
-
-**Size** came down by removing two dependencies that were never imported (`react-native-screens` 1.17 MB, `react-native-svg` 771 KB — installed at scaffold time, then superseded by the custom navigation in [src/Root.js](src/Root.js)) and by enabling R8 + resource shrinking, which took DEX from 7.5 MB across three files to 2.8 MB in one.
-
-What remains is mostly irreducible: `libreactnative.so` (6.8 MB), `libhermesvm.so` (2.4 MB), Reanimated + Worklets (2.5 MB), `libc++_shared.so` (1.3 MB). ~12-14 MB is the React Native runtime floor regardless of how small the app is.
-
-For distribution use `npm run android:aab` — Play splits the bundle per device, so users download roughly an arm64-sized slice rather than all four.
-
-Requires Android SDK Platform 36 (Android 16), which React Native 0.86 compiles against. Install it via Android Studio → SDK Manager if the build reports it missing.
+Note: the PWA install icons and `theme_color` are baked into `public/manifest.json` at build time, so the home-screen icon and launch background stay teal regardless of the in-app accent.
 
 ## PWA (installable web app)
 
@@ -120,7 +69,7 @@ iOS ignores the manifest, so `apple-touch-icon` plus `apple-mobile-web-app-*` ta
 
 ## Icons
 
-All six app icons are generated from a single vector source — no binary editing:
+Every icon is generated from a single vector source — no binary editing:
 
 ```bash
 npm run icons     # node scripts/make-icons.mjs
@@ -130,22 +79,18 @@ The mark is one receipt divided by a vertical cut into two unequal shares, with 
 
 | Asset | Size | Purpose |
 | --- | --- | --- |
-| `icon.png` | 1024² | iOS / store icon — alpha flattened, since Apple rejects transparency |
-| `favicon.png` | 96² | Web; Expo compiles it into a multi-size `favicon.ico` |
-| `splash-icon.png` | 1024² | Splash mark, transparent — sized via the `expo-splash-screen` plugin |
-| `android-icon-foreground.png` | 512² | Adaptive icon foreground |
-| `android-icon-background.png` | 512² | Adaptive icon background layer |
-| `android-icon-monochrome.png` | 432² | Android 13+ themed icons |
+| `assets/icon.png` | 1024² | High-resolution master of the mark |
+| `assets/favicon.png` | 96² | Expo compiles it into a multi-size `favicon.ico` |
 | `public/pwa-192.png` | 192² | PWA install icon |
-| `public/pwa-512.png` | 512² | PWA install icon / splash |
+| `public/pwa-512.png` | 512² | PWA install icon / launch screen |
 | `public/pwa-maskable-512.png` | 512² | PWA maskable — art bleeds to the edge for circular crops |
-| `public/apple-touch-icon.png` | 180² | iOS Add to Home Screen (opaque) |
+| `public/apple-touch-icon.png` | 180² | iOS Add to Home Screen (opaque — iOS ignores the manifest) |
 
-The script's `span` parameter means "fraction of the canvas the mark occupies", so the platform sizing rules are expressed directly. The Android foreground sits at ~58×62% — filling the launcher mask while staying inside the 66% safe zone, which `scripts/make-icons.mjs` output and the checks in this repo's history verified against circular and squircle masks.
+The script's `span` parameter means "fraction of the canvas the mark occupies", so sizing rules are expressed directly rather than as opaque scale factors. The maskable icon sits at 46% so it survives the circular crop Android applies to installed PWAs.
 
 ## Design
 
-Custom UI layer in [src/ui.js](src/ui.js) — gradient headers, spring-press feedback on every tappable, staggered list fade-ins, animated count-up totals, animated progress bars, and slide-up bottom sheets. Haptics on native. Dark mode throughout. On wide browser windows the app centers itself in a phone-width column.
+Custom UI layer in [src/ui.js](src/ui.js) — gradient headers, spring-press feedback on every tappable, staggered list fade-ins, animated count-up totals, animated progress bars, and slide-up bottom sheets, all on React Native's built-in `Animated`. Dark mode throughout. On wide browser windows the app centers itself in a phone-width column; on iOS it respects the home-indicator safe area via `env(safe-area-inset-bottom)`.
 
 ## Layout
 

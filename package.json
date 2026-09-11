@@ -9,28 +9,19 @@
     "expo": "~57.0.21",
     "expo-haptics": "~57.0.2",
     "expo-linear-gradient": "~57.0.1",
-    "expo-splash-screen": "~57.0.8",
     "expo-status-bar": "~57.0.1",
-    "expo-system-ui": "~57.0.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
     "react-native-gesture-handler": "~2.32.0",
-    "react-native-reanimated": "4.5.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-web": "^0.21.2"
   },
   "scripts": {
-    "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
+    "start": "expo start --web",
     "web": "expo start --web",
     "build": "node scripts/build-web.mjs",
-    "icons": "node scripts/make-icons.mjs",
-    "android:apk": "node scripts/build-android.mjs",
-    "android:fast": "node scripts/build-android.mjs --fast",
-    "android:aab": "node scripts/build-android.mjs --aab",
-    "android:debug": "node scripts/build-android.mjs --debug"
+    "icons": "node scripts/make-icons.mjs"
   },
   "private": true,
   "devDependencies": {

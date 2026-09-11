@@ -8,20 +8,6 @@
     "scheme": "splitlocal",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.splitlocal.app"
-    },
-    "android": {
-      "package": "com.splitlocal.app",
-      "versionCode": 1,
-      "adaptiveIcon": {
-        "backgroundColor": "#1CC29F",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
-    },
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
@@ -34,19 +20,6 @@
       "startUrl": "/",
       "themeColor": "#1CC29F",
       "backgroundColor": "#F5F7FA"
-    },
-    "plugins": [
-      "./plugins/withReleaseSigning.js",
-      "./plugins/withFastBuilds.js",
-      [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#1CC29F",
-          "image": "./assets/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain"
-        }
-      ]
-    ]
+    }
   }
 }

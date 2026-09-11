@@ -102,7 +102,7 @@ const write = async (name, buf, dir = OUT) => {
 
 console.log('Generating icons…');
 
-// iOS / store icon — full-bleed square; ~58% keeps margin inside the mask.
+// App icon, kept as the highest-resolution master of the mark.
 await write(
   'icon.png',
   await render(svg({ bg: 'gradient', rounded: 0, span: 0.58 }), 1024, { flatten: BRAND.light })
@@ -115,8 +115,8 @@ await write('favicon.png', await render(svg({ bg: 'gradient', rounded: 96, span:
 // referenced by hand from public/manifest.json and land in dist/ via public/.
 await write('pwa-192.png', await render(svg({ bg: 'gradient', rounded: 42, span: 0.62 }), 192), WEB);
 await write('pwa-512.png', await render(svg({ bg: 'gradient', rounded: 112, span: 0.62 }), 512), WEB);
-// Maskable: Android crops install icons to a circle/squircle, so the artwork
-// must bleed to the edges and the mark shrink into the ~80% safe area.
+// Maskable: an installed PWA is cropped to a circle/squircle on Android, so
+// the artwork must bleed to the edges with the mark inside the ~80% safe area.
 await write(
   'pwa-maskable-512.png',
   await render(svg({ bg: 'gradient', rounded: 0, span: 0.46 }), 512),
@@ -127,23 +127,6 @@ await write(
   'apple-touch-icon.png',
   await render(svg({ bg: 'gradient', rounded: 0, span: 0.6 }), 180, { flatten: BRAND.light }),
   WEB
-);
-// Splash — mark alone on the brand background.
-await write('splash-icon.png', await render(svg({ bg: null, span: 0.5 }), 1024));
-// Android adaptive foreground — 62% fills the launcher mask without clipping
-// (the outer ~17% on each side can be cropped by aggressive OEM masks).
-await write('android-icon-foreground.png', await render(svg({ bg: null, span: 0.62 }), 512));
-await write(
-  'android-icon-background.png',
-  await render(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-<defs>${GRAD}</defs><rect width="512" height="512" fill="url(#g)"/></svg>`,
-    512
-  )
-);
-await write(
-  'android-icon-monochrome.png',
-  await render(svg({ fill: '#FFFFFF', bg: null, span: 0.62 }), 432)
 );
 
 console.log('Done.');

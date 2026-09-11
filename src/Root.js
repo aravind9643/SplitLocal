@@ -82,21 +82,21 @@ function TabBar({ active, onChange }) {
           borderTopWidth: StyleSheet.hairlineWidth,
           borderTopColor: t.border,
         },
+        // On web, react-native-safe-area-context reports 0 insets, so
+        // SafeAreaView reserves nothing and the bar sits under the iOS home
+        // indicator / Safari toolbar. Read the real inset from CSS.
+        //
+        // The padding MUST sit on this element — the one carrying the
+        // background — otherwise the reserved strip renders transparent and
+        // the page background shows through below the bar.
+        Platform.OS === 'web' && {
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        },
         shadow(16),
       ]}
     >
-      <SafeAreaView edges={['bottom']}>
-        <View
-          style={[
-            { flexDirection: 'row', paddingTop: 8, paddingBottom: 6 },
-            // On web, react-native-safe-area-context reports 0 insets, so the
-            // SafeAreaView above reserves nothing and the bar sits under the
-            // iOS home indicator. Read the real inset from CSS instead.
-            Platform.OS === 'web' && {
-              paddingBottom: 'max(6px, env(safe-area-inset-bottom))',
-            },
-          ]}
-        >
+      <SafeAreaView edges={Platform.OS === 'web' ? [] : ['bottom']}>
+        <View style={{ flexDirection: 'row', paddingTop: 8, paddingBottom: 6 }}>
           {TABS.map((x) => {
             const on = active === x.id;
             return (

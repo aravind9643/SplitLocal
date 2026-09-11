@@ -32,38 +32,33 @@
     -->
     <style id="expo-reset">
       /*
-        Full-height, including the area behind the iOS home indicator.
+        Fill the window exactly — including the area behind the iOS home
+        indicator — without leaving a strip of <body> visible underneath.
 
-        `height: 100%` resolves to the *visual* viewport, which in a standalone
-        iOS PWA stops above the home indicator — leaving a dead strip below the
-        tab bar. 100dvh covers the full window and accounts for the dynamic
-        browser chrome; -webkit-fill-available is the fallback for older iOS.
+        Anchoring all four edges of a fixed <body> is what actually pins it: a
+        fixed element with only a height is not anchored to the viewport, so on
+        iOS it can come up short and let the page background show through below
+        the tab bar. inset:0 makes the window the sole source of truth, so no
+        height unit (100%, 100vh, 100dvh) is consulted at all.
       */
-      html,
-      body {
+      html {
         height: 100%;
-        height: -webkit-fill-available;
-        height: 100dvh;
       }
-      /* These styles disable body scrolling if you are using <ScrollView> */
       body {
-        overflow: hidden;
-        /* iOS rubber-band scrolling reveals the page behind the app */
-        overscroll-behavior: none;
         position: fixed;
-        width: 100%;
+        inset: 0; /* top/right/bottom/left: 0 */
+        margin: 0;
+        overflow: hidden;
+        /* stop rubber-band scrolling revealing the page behind the app */
+        overscroll-behavior: none;
+        background-color: #f5f7fa;
       }
       /* These styles make the root element full-height */
       #root {
         display: flex;
+        flex-direction: column;
         height: 100%;
         flex: 1;
-      }
-      /* Paint the brand colour behind the app so the launch flash matches the
-         splash screen instead of flashing white. */
-      body {
-        margin: 0;
-        background-color: #f5f7fa;
       }
     </style>
   </head>

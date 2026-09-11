@@ -37,6 +37,7 @@
     },
     "plugins": [
       "./plugins/withReleaseSigning.js",
+      "./plugins/withFastBuilds.js",
       [
         "expo-splash-screen",
         {

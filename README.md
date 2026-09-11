@@ -57,10 +57,13 @@ Note: the native splash screen and Android adaptive-icon background are baked in
 ## Android build
 
 ```bash
-npm run android:apk     # signed release APK  → android/app/build/outputs/apk/release/
+npm run android:fast    # arm64 only — ~2 min, for testing on a real phone
+npm run android:apk     # all 4 ABIs, signed  → android/app/build/outputs/apk/release/
 npm run android:aab     # Play Store bundle   → android/app/build/outputs/bundle/release/
 npm run android:debug   # debug APK, no signing needed
 ```
+
+Extra flags for `scripts/build-android.mjs`: `--fast` (arm64), `--fast-emu` (x86_64 emulator), `--clean` (force re-packaging and re-signing), `--check` (verify JDK/SDK/keystore without building).
 
 Builds run **locally** — no EAS account or cloud queue. `scripts/build-android.mjs` runs `expo prebuild` if needed, then Gradle, and handles two things that otherwise break a local build:
 
@@ -73,6 +76,28 @@ winget install EclipseAdoptium.Temurin.17.JDK
 **Signing.** Release builds are signed with `credentials/release.keystore`. Passwords are passed as `ORG_GRADLE_PROJECT_*` environment variables, so nothing secret is written to a tracked file, and the config is applied by a config plugin (`plugins/withReleaseSigning.js`) so it survives `expo prebuild --clean` — editing `android/app/build.gradle` by hand would be silently lost, since `android/` is generated and gitignored.
 
 Override the defaults with `SPLITLOCAL_STORE_PASSWORD` / `SPLITLOCAL_KEY_PASSWORD` / `SPLITLOCAL_KEY_ALIAS`. **Back up the keystore** — see `credentials/README.md`; losing it means you can never update the app under the same identity.
+
+After building, the script verifies the APK's certificate with `apksigner` and **fails** if it carries `CN=Android Debug`. Gradle can report `assembleRelease` as `UP-TO-DATE` and hand back an artifact signed under an earlier config, so the check trusts the file rather than the build log. If it trips, rebuild with `--clean`.
+
+### Build time and APK size
+
+Measured on this project (8-core machine, cold native cache):
+
+| Build | Time | APK |
+| --- | --- | --- |
+| All 4 ABIs, no shrinking | 19m 06s | 92.7 MB |
+| `--fast` (arm64 only) | 2m 13s | 34.8 MB |
+| `--fast` + R8 + unused deps removed | 4m 22s | **26.3 MB** |
+
+Two separate problems, two separate fixes.
+
+**Time** is dominated by compiling C++ (Hermes, Reanimated, gesture-handler, expo-modules-core, the app's JNI) *once per ABI* — 44 CMake tasks across four architectures. `--fast` builds only `arm64-v8a`, removing ~75% of that work. `arm64-v8a` covers essentially every modern physical device; use `--fast-emu` for an x86_64 emulator. Neither is for distribution.
+
+**Size** came down by removing two dependencies that were never imported (`react-native-screens` 1.17 MB, `react-native-svg` 771 KB — installed at scaffold time, then superseded by the custom navigation in [src/Root.js](src/Root.js)) and by enabling R8 + resource shrinking, which took DEX from 7.5 MB across three files to 2.8 MB in one.
+
+What remains is mostly irreducible: `libreactnative.so` (6.8 MB), `libhermesvm.so` (2.4 MB), Reanimated + Worklets (2.5 MB), `libc++_shared.so` (1.3 MB). ~12-14 MB is the React Native runtime floor regardless of how small the app is.
+
+For distribution use `npm run android:aab` — Play splits the bundle per device, so users download roughly an arm64-sized slice rather than all four.
 
 Requires Android SDK Platform 36 (Android 16), which React Native 0.86 compiles against. Install it via Android Studio → SDK Manager if the build reports it missing.
 

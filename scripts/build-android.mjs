@@ -147,11 +147,47 @@ const task = args.has('--debug')
     ? ':app:bundleRelease'
     : ':app:assembleRelease';
 
-console.log(`\n› gradlew ${task}\n`);
 // Use an absolute path: with shell:true on Windows a bare "gradlew.bat" is
 // resolved against PATH rather than cwd, so it is "not recognized".
 const gradlew = join(ROOT, 'android', isWin ? 'gradlew.bat' : 'gradlew');
-const r = spawnSync(gradlew, [task, '--no-daemon'], {
+const gradleArgs = [task];
+
+// The daemon is what makes a second build fast: it keeps the JVM warm and
+// Gradle's configuration cached. --no-daemon was only needed to avoid leaving
+// a stray process behind; pass --slow-safe if you want the old behaviour.
+if (args.has('--no-daemon')) gradleArgs.push('--no-daemon');
+
+// --fast builds one ABI instead of four. Native (C++) compilation dominates a
+// release build and is repeated per ABI, so this removes roughly 75% of it.
+// arm64-v8a covers essentially every modern physical device; use --fast-emu
+// for an x86_64 emulator. Never use this for an artifact you distribute.
+if (args.has('--fast') || args.has('--fast-emu')) {
+  const abi = args.has('--fast-emu') ? 'x86_64' : 'arm64-v8a';
+  gradleArgs.push(`-PreactNativeArchitectures=${abi}`);
+  console.log(`› --fast: building ${abi} only (not for distribution)`);
+}
+
+// --clean forces packaging + signing to actually rerun. Without it Gradle can
+// report assembleRelease UP-TO-DATE and keep an APK signed under a previous
+// (e.g. debug) signing config.
+//
+// We delete the build outputs directly instead of running Gradle's `clean`
+// task: `externalNativeBuildClean*` re-invokes CMake over stale .cxx state and
+// fails with "GLOB mismatch". Removing the directories sidesteps CMake, and
+// .cxx is left alone so the (slow) native compile stays cached.
+if (args.has('--clean')) {
+  const { rmSync } = await import('node:fs');
+  for (const d of ['app/build/outputs', 'app/build/intermediates/apk']) {
+    const p = join(ROOT, 'android', d);
+    if (existsSync(p)) {
+      rmSync(p, { recursive: true, force: true });
+      console.log(`› removed android/${d}`);
+    }
+  }
+}
+
+console.log(`\n› gradlew ${gradleArgs.join(' ')}\n`);
+const r = spawnSync(gradlew, gradleArgs, {
   cwd: join(ROOT, 'android'),
   stdio: 'inherit',
   env,
@@ -170,10 +206,46 @@ const out = args.has('--aab')
     ? join(ROOT, 'android/app/build/outputs/apk/debug/app-debug.apk')
     : join(ROOT, 'android/app/build/outputs/apk/release/app-release.apk');
 
-if (existsSync(out)) {
-  const { statSync } = await import('node:fs');
-  console.log(`\n✓ ${out}\n  ${(statSync(out).size / 1024 / 1024).toFixed(1)} MB`);
-} else {
-  console.log(`\n! build reported success but ${out} is missing`);
+if (!existsSync(out)) {
+  console.log(`\n✗ build reported success but ${out} is missing`);
   process.exit(1);
+}
+
+const { statSync } = await import('node:fs');
+console.log(`\n✓ ${out}\n  ${(statSync(out).size / 1024 / 1024).toFixed(1)} MB`);
+
+/* ---------- 6. prove the release is really release-signed ---------- */
+
+// Gradle's packaging task can report UP-TO-DATE and hand back an APK signed
+// with an older config, so trust the artifact, not the build log. Only APKs
+// can be checked this way (apksigner does not read .aab).
+if (wantRelease && !args.has('--aab') && existsSync(keystore)) {
+  const bt = join(sdk, 'build-tools');
+  const version = existsSync(bt)
+    ? readdirSync(bt)
+        .filter((d) => /^\d+\./.test(d))
+        .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))[0]
+    : null;
+  const apksigner = version && join(bt, version, isWin ? 'apksigner.bat' : 'apksigner');
+
+  if (!apksigner || !existsSync(apksigner)) {
+    console.log('  (apksigner not found — skipping signature check)');
+  } else {
+    const v = spawnSync(apksigner, ['verify', '--print-certs', out], {
+      encoding: 'utf8',
+      env,
+      shell: isWin,
+    });
+    const dn = (`${v.stdout || ''}`.match(/certificate DN: (.+)/) || [])[1] || 'unknown';
+    if (/CN=Android Debug/i.test(dn)) {
+      console.error(
+        `\n✗ This APK is signed with the DEBUG key (${dn.trim()}).\n` +
+          `  It cannot be updated across installs or uploaded to Play.\n` +
+          `  Gradle likely reused an up-to-date artifact — rerun with:\n` +
+          `      node scripts/build-android.mjs --clean\n`
+      );
+      process.exit(1);
+    }
+    console.log(`  signed by: ${dn.trim()}`);
+  }
 }

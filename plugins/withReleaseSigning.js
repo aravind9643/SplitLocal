@@ -43,15 +43,29 @@ module.exports = function withReleaseSigning(config) {
       src = src.replace(anchor, `$1${SIGNING_CONFIG}`);
     }
 
-    // 2. make the release build type use it instead of signingConfigs.debug
-    const before = src;
-    src = src.replace(
+    // 2. point the *release build type* at it.
+    //
+    // This must be scoped to the buildTypes block. Matching `release {` across
+    // the whole file also hits the `release {}` we just added inside
+    // signingConfigs, and the following `signingConfig signingConfigs.debug`
+    // then belongs to the DEBUG build type — silently swapping the two, which
+    // yields a debug-signed release APK.
+    const buildTypes = src.match(/buildTypes \{[\s\S]*?\n {4}\}/);
+    if (!buildTypes) {
+      throw new Error('withReleaseSigning: could not find buildTypes block');
+    }
+    const patched = buildTypes[0].replace(
       /(release \{[\s\S]*?)signingConfig signingConfigs\.debug/,
       '$1signingConfig signingConfigs.release'
     );
-    if (src === before && !src.includes('signingConfig signingConfigs.release')) {
+    if (!/release \{[\s\S]*?signingConfig signingConfigs\.release/.test(patched)) {
       throw new Error('withReleaseSigning: could not repoint the release signingConfig');
     }
+    // guard against the inverse mistake ever shipping again
+    if (/debug \{\s*signingConfig signingConfigs\.release/.test(patched)) {
+      throw new Error('withReleaseSigning: patched the debug build type by mistake');
+    }
+    src = src.replace(buildTypes[0], patched);
 
     cfg.modResults.contents = src;
     return cfg;

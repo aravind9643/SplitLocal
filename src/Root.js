@@ -86,7 +86,17 @@ function TabBar({ active, onChange }) {
       ]}
     >
       <SafeAreaView edges={['bottom']}>
-        <View style={{ flexDirection: 'row', paddingTop: 8, paddingBottom: 6 }}>
+        <View
+          style={[
+            { flexDirection: 'row', paddingTop: 8, paddingBottom: 6 },
+            // On web, react-native-safe-area-context reports 0 insets, so the
+            // SafeAreaView above reserves nothing and the bar sits under the
+            // iOS home indicator. Read the real inset from CSS instead.
+            Platform.OS === 'web' && {
+              paddingBottom: 'max(6px, env(safe-area-inset-bottom))',
+            },
+          ]}
+        >
           {TABS.map((x) => {
             const on = active === x.id;
             return (

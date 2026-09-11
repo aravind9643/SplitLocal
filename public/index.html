@@ -31,14 +31,27 @@
       https://necolas.github.io/react-native-web/docs/setup/#root-element
     -->
     <style id="expo-reset">
-      /* These styles make the body full-height */
+      /*
+        Full-height, including the area behind the iOS home indicator.
+
+        `height: 100%` resolves to the *visual* viewport, which in a standalone
+        iOS PWA stops above the home indicator — leaving a dead strip below the
+        tab bar. 100dvh covers the full window and accounts for the dynamic
+        browser chrome; -webkit-fill-available is the fallback for older iOS.
+      */
       html,
       body {
         height: 100%;
+        height: -webkit-fill-available;
+        height: 100dvh;
       }
       /* These styles disable body scrolling if you are using <ScrollView> */
       body {
         overflow: hidden;
+        /* iOS rubber-band scrolling reveals the page behind the app */
+        overscroll-behavior: none;
+        position: fixed;
+        width: 100%;
       }
       /* These styles make the root element full-height */
       #root {

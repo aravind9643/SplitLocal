@@ -494,16 +494,29 @@ export function Sheet({ visible, onClose, title, children, footer, wide }) {
           {footer ? (
             <SafeAreaView
               edges={['bottom']}
-              style={{
-                padding: 16,
-                borderTopWidth: StyleSheet.hairlineWidth,
-                borderTopColor: t.border,
-              }}
+              style={[
+                {
+                  padding: 16,
+                  borderTopWidth: StyleSheet.hairlineWidth,
+                  borderTopColor: t.border,
+                },
+                // insets are 0 on web — read the real value from CSS
+                Platform.OS === 'web' && {
+                  paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+                },
+              ]}
             >
               {footer}
             </SafeAreaView>
           ) : (
-            <SafeAreaView edges={['bottom']} />
+            <SafeAreaView
+              edges={['bottom']}
+              style={
+                Platform.OS === 'web'
+                  ? { height: 'env(safe-area-inset-bottom)' }
+                  : undefined
+              }
+            />
           )}
         </Animated.View>
       </View>
